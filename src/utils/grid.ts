@@ -1,4 +1,4 @@
-import type { Vector } from "./vector.js"
+import { Vector } from "./vector.js"
 
 export class Grid<T> {
   width: number
@@ -33,5 +33,15 @@ export class Grid<T> {
     }
 
     return this.cells[position.y]![position.x]!
+  }
+
+  forEachCell(cb: (cell: T, position: Vector) => void) {
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        const cell = this.cells[y]![x]!
+        const position = new Vector(x, y)
+        cb(cell, position)
+      }
+    }
   }
 }

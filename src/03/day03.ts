@@ -24,7 +24,30 @@ const part1 = () => {
   console.log(partNumberSum)
 }
 
-const part2 = () => {}
+const part2 = () => {
+  const inputString = readInput(3)
+  const grid = Grid.fromString(inputString)
+  const schematicNumbers = findSchematicNumbers(grid)
+
+  const possibleGearPositions = findPossibleGearPositions(grid)
+
+  let partNumberSum = 0
+
+  for (const position of possibleGearPositions) {
+    const surroundingPartNumbers = findSurroundingSchematicNumbers(
+      position,
+      schematicNumbers,
+    )
+
+    if (surroundingPartNumbers.length === 2) {
+      const partNumber1 = surroundingPartNumbers[0]!.number
+      const partNumber2 = surroundingPartNumbers[1]!.number
+      partNumberSum += partNumber1 * partNumber2
+    }
+  }
+
+  console.log(partNumberSum)
+}
 
 const findSchematicNumbers = (grid: Grid<string>) => {
   const schematicNumbers: SchematicNumber[] = []
@@ -107,6 +130,50 @@ const isSymbolAtPosition = (grid: Grid<string>, position: Vector): boolean => {
 const isSymbol = (cell: string): boolean => {
   const isNumber = cell >= "0" && cell <= "9"
   return cell !== "." && !isNumber
+}
+
+const findPossibleGearPositions = (grid: Grid<string>): Vector[] => {
+  const positions: Vector[] = []
+
+  grid.forEachCell((cell, position) => {
+    if (cell === "*") {
+      positions.push(position)
+    }
+  })
+
+  return positions
+}
+
+const findSurroundingSchematicNumbers = (
+  position: Vector,
+  schematicNumbers: SchematicNumber[],
+): SchematicNumber[] => {
+  return schematicNumbers.filter((schematicNumber) =>
+    isSchematicNumberTouchingPosition(schematicNumber, position),
+  )
+}
+
+const isSchematicNumberTouchingPosition = (
+  schematicNumber: SchematicNumber,
+  position: Vector,
+): boolean => {
+  if (position.y < schematicNumber.position.y - 1) {
+    return false
+  }
+
+  if (position.y > schematicNumber.position.y + 1) {
+    return false
+  }
+
+  if (position.x < schematicNumber.position.x - 1) {
+    return false
+  }
+
+  if (position.x > schematicNumber.position.x + schematicNumber.length) {
+    return false
+  }
+
+  return true
 }
 
 export default [part1, part2]
