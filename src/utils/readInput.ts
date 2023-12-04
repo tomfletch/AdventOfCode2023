@@ -1,7 +1,7 @@
 import fs from "fs"
 
-export const readInputLines = (day: number) => {
-  const input = readInput(day)
+export const readInputLines = (day: number, filename: string = "input") => {
+  const input = readInput(day, filename)
   return input.split("\n")
 }
 
