@@ -13,7 +13,11 @@ const part1 = () => {
   console.log(options)
 }
 
-const part2 = () => {}
+const part2 = () => {
+  const race = readRace()
+  const options = getRaceChargeTimeOptions(race)
+  console.log(options)
+}
 
 const readRaces = (): Race[] => {
   const lines = readInputLines(6)
@@ -29,6 +33,17 @@ const readRaces = (): Race[] => {
   }
 
   return races
+}
+
+const readRace = (): Race => {
+  const lines = readInputLines(6)
+  const [time, distance] = lines.map(readLineNumber) as [number, number]
+  return { time, distance }
+}
+
+const readLineNumber = (line: string): number => {
+  const noSpaces = line.replaceAll(" ", "")
+  return Number(noSpaces.split(":")[1])
 }
 
 const getRaceChargeTimeOptions = (race: Race): number => {
