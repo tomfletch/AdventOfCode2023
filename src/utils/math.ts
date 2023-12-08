@@ -13,3 +13,19 @@ export const solveQuadratic = (a: number, b: number, c: number): number[] => {
 
   return [(-b + discriminantSqrt) / (2 * a), (-b - discriminantSqrt) / (2 * a)]
 }
+
+export const gcd = (a: number, b: number): number => {
+  return !b ? a : gcd(b, a % b)
+}
+
+export const lcm = (a: number, b: number): number => {
+  return (a * b) / gcd(a, b)
+}
+
+export const lcmAll = (arr: number[]): number => {
+  let multiple = arr[0]!
+  for (const value of arr) {
+    multiple = lcm(multiple, value)
+  }
+  return multiple
+}
