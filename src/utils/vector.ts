@@ -6,4 +6,8 @@ export class Vector {
     this.x = x
     this.y = y
   }
+
+  add(other: Vector): Vector {
+    return new Vector(this.x + other.x, this.y + other.y)
+  }
 }
