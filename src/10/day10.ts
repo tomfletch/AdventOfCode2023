@@ -145,6 +145,34 @@ const findFirstDirection = (
   throw new Error("Failed to find a first direction")
 }
 
+const getStartPositionCell = (
+  grid: Grid<CellType>,
+  startPosition: Vector,
+): CellType => {
+  const compasDirections: Direction[] = []
+
+  for (const direction in DIRECTIONS) {
+    const compasDirection = direction as Direction
+    const delta = DIRECTIONS[compasDirection]
+    const nextPosition = startPosition.add(delta)
+    const cell = grid.getCell(nextPosition)
+    const possibleCells = DirectionCellTypes[compasDirection]
+    if (cell && possibleCells.includes(cell)) {
+      compasDirections.push(compasDirection)
+    }
+  }
+
+  for (const cellType in CellTypeDirections) {
+    const directions = CellTypeDirections[cellType as CellType]
+
+    if (directions.every((d) => compasDirections.includes(d))) {
+      return cellType as CellType
+    }
+  }
+
+  throw new Error("Failed to find start cell type")
+}
+
 const findStartPosition = (grid: Grid<CellType>): Vector => {
   for (let y = 0; y < grid.height; y++) {
     for (let x = 0; x < grid.width; x++) {
@@ -166,6 +194,89 @@ const DIRECTIONS = {
   [Direction.NORTH]: new Vector(0, -1),
 } as const satisfies Record<Direction, Vector>
 
-const part2 = () => {}
+type InsideState = "OUTSIDE" | "FROM_ABOVE" | "FROM_BELOW" | "INSIDE"
+
+const part2 = () => {
+  const inputString = readInput(10)
+  const grid = Grid.fromStringWithMap(inputString, CharCellTypeMap)
+  // console.log(grid.toString(CellTypeDisplayCharMap))
+
+  const startPosition = findStartPosition(grid)
+  let position = startPosition
+  let direction = findFirstDirection(grid, startPosition)
+  let cell = grid.getCell(position)!
+
+  const positions: Vector[] = []
+
+  do {
+    const delta = DIRECTIONS[direction]
+    position = position.add(delta)
+    cell = grid.getCell(position)!
+
+    if (cell !== "START") {
+      direction = getOutputDirection(cell, direction)
+    }
+
+    positions.push(position)
+  } while (cell !== "START")
+
+  const startPositionCell = getStartPositionCell(grid, startPosition)
+  grid.setCell(startPosition, startPositionCell)
+
+  let insideCellCount = 0
+
+  for (let y = 0; y < grid.height; y++) {
+    let state: InsideState = "OUTSIDE"
+
+    for (let x = 0; x < grid.width; x++) {
+      const position = new Vector(x, y)
+      const cell = grid.getCell(position)
+
+      const isPositionOnLoop = positions.some(
+        (p) => p.x === position.x && p.y === position.y,
+      )
+
+      if (isPositionOnLoop) {
+        if (cell == CellType.NORTH_SOUTH) {
+          if (state === "OUTSIDE") {
+            state = "INSIDE"
+          } else {
+            state = "OUTSIDE"
+          }
+        } else if (cell == CellType.NORTH_EAST) {
+          if (state === "INSIDE") {
+            state = "FROM_BELOW"
+          } else if (state === "OUTSIDE") {
+            state = "FROM_ABOVE"
+          }
+        } else if (cell === CellType.SOUTH_EAST) {
+          if (state === "INSIDE") {
+            state = "FROM_ABOVE"
+          } else if (state === "OUTSIDE") {
+            state = "FROM_BELOW"
+          }
+        } else if (cell === CellType.NORTH_WEST) {
+          if (state === "FROM_ABOVE") {
+            state = "OUTSIDE"
+          } else if (state === "FROM_BELOW") {
+            state = "INSIDE"
+          }
+        } else if (cell === CellType.SOUTH_WEST) {
+          if (state === "FROM_ABOVE") {
+            state = "INSIDE"
+          } else if (state === "FROM_BELOW") {
+            state = "OUTSIDE"
+          }
+        }
+      } else {
+        if (state === "INSIDE") {
+          insideCellCount += 1
+        }
+      }
+    }
+  }
+
+  console.log(insideCellCount)
+}
 
 export default [part1, part2]

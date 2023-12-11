@@ -53,6 +53,18 @@ export class Grid<T extends string | number | symbol> {
     return this.cells[position.y]![position.x]!
   }
 
+  setCell(position: Vector, cell: T) {
+    if (position.x < 0 || position.x >= this.width) {
+      return
+    }
+
+    if (position.y < 0 || position.y >= this.height) {
+      return
+    }
+
+    this.cells[position.y]![position.x] = cell
+  }
+
   forEachCell(cb: (cell: T, position: Vector) => void) {
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
