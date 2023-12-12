@@ -2,6 +2,14 @@ import { readInputLines } from "../utils/readInput.js"
 import { Vector } from "../utils/vector.js"
 
 const part1 = () => {
+  findDistanceSum(1)
+}
+
+const part2 = () => {
+  findDistanceSum(1000000 - 1)
+}
+
+const findDistanceSum = (expansion: number) => {
   const lines = readInputLines(11)
   const galaxyPositions: Vector[] = []
 
@@ -23,7 +31,7 @@ const part1 = () => {
     if (!areGalaxiesOnRow) {
       const galaxiesAfterRow = galaxyPositions.filter((p) => p.y > y)
       for (const galaxy of galaxiesAfterRow) {
-        galaxy.y += 1
+        galaxy.y += expansion
       }
     }
   }
@@ -35,7 +43,7 @@ const part1 = () => {
     if (!areGalaxiesOnColumn) {
       const galaxiesAfterColumn = galaxyPositions.filter((p) => p.x > x)
       for (const galaxy of galaxiesAfterColumn) {
-        galaxy.x += 1
+        galaxy.x += expansion
       }
     }
   }
@@ -53,7 +61,5 @@ const part1 = () => {
 
   console.log(distanceSum)
 }
-
-const part2 = () => {}
 
 export default [part1, part2]
