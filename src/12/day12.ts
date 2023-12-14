@@ -18,11 +18,34 @@ const part1 = () => {
   console.log(total)
 }
 
-const part2 = () => {}
+const part2 = () => {
+  const conditionRecords = readConditionRecords()
+  const unfoldedConditionRecords = conditionRecords.map(unfoldConditionRecord)
+  const validOptionCounts = unfoldedConditionRecords.map(getValidOptionCount)
+  const total = validOptionCounts.reduce((acc, c) => acc + c)
+  console.log(total)
+}
 
 const readConditionRecords = (): ConditionRecord[] => {
   const lines = readInputLines(12)
   return lines.map(parseLine)
+}
+
+const unfoldConditionRecord = (
+  conditionRecord: ConditionRecord,
+): ConditionRecord => {
+  let rowParts: string[] = []
+  const groups: number[] = []
+
+  for (let i = 0; i < 5; i++) {
+    rowParts.push(conditionRecord.row)
+    groups.push(...conditionRecord.groups)
+  }
+
+  return {
+    row: rowParts.join(ConditionChar.UNKNOWN),
+    groups,
+  }
 }
 
 const parseLine = (line: string): ConditionRecord => {
@@ -37,47 +60,56 @@ const parseLine = (line: string): ConditionRecord => {
 }
 
 const getValidOptionCount = (conditionRecord: ConditionRecord): number => {
-  const options = getOptions(conditionRecord.row.length, conditionRecord.groups)
-  const validOptions = options.filter((o) =>
-    isOptionValid(o, conditionRecord.row),
-  )
-  return validOptions.length
+  return getOptionCount(conditionRecord.groups, conditionRecord.row)
 }
 
-const getOptions = (length: number, groups: number[]): string[] => {
+const optionCountCache: Record<string, number> = {}
+
+const getOptionCount = (groups: number[], target: string): number => {
+  const key = `${target}-${groups}`
+
+  if (key in optionCountCache) {
+    return optionCountCache[key]!
+  }
+
   const group = groups[0]!
   const remainingGroups = groups.slice(1)
 
   if (groups.length === 1) {
-    const options: string[] = []
+    let count = 0
 
-    for (let i = 0; i <= length - group; i++) {
+    for (let i = 0; i <= target.length - group; i++) {
       let option = ConditionChar.OPERATIONAL.repeat(i)
       option += ConditionChar.DAMAGED.repeat(group)
-      option += ConditionChar.OPERATIONAL.repeat(length - group - i)
-      options.push(option)
+      option += ConditionChar.OPERATIONAL.repeat(target.length - group - i)
+
+      if (isOptionValid(option, target)) {
+        count += 1
+      }
     }
 
-    return options
+    optionCountCache[key] = count
+    return count
   }
 
   const minRemaining =
     remainingGroups.reduce((acc, g) => acc + g) + remainingGroups.length - 1
-  const options: string[] = []
+  let count = 0
 
-  for (let i = 0; i < length - minRemaining; i++) {
+  for (let i = 0; i < target.length - minRemaining; i++) {
     let optionStart = ConditionChar.OPERATIONAL.repeat(i)
     optionStart += ConditionChar.DAMAGED.repeat(group)
     optionStart += ConditionChar.OPERATIONAL
 
-    const endOptions = getOptions(length - i - group - 1, remainingGroups)
-
-    for (const endOption of endOptions) {
-      options.push(`${optionStart}${endOption}`)
+    if (!isOptionValid(optionStart, target)) {
+      continue
     }
+
+    count += getOptionCount(remainingGroups, target.substring(i + group + 1))
   }
 
-  return options
+  optionCountCache[key] = count
+  return count
 }
 
 const isOptionValid = (option: string, record: string): boolean => {
