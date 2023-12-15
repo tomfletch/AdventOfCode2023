@@ -75,13 +75,13 @@ export class Grid<T extends string | number | symbol> {
     }
   }
 
-  toString(map: Record<T, string>) {
+  toString(map?: Record<T, string>) {
     let str = ""
 
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
         const cell = this.cells[y]![x]!
-        str += map[cell]
+        str += map ? map[cell] : cell.toString()
       }
       str += "\n"
     }
