@@ -12,13 +12,39 @@ type Lens = {
   focalLength: number
 }
 
-type Step = {
+abstract class Step {
   label: string
   labelHash: number
-} & (
-  | { operation: typeof Operation.REMOVE }
-  | { operation: typeof Operation.ADD; focalLength: number }
-)
+
+  constructor(label: string) {
+    this.label = label
+    this.labelHash = hash(label)
+  }
+
+  execute(boxSystem: BoxSystem) {}
+}
+
+class AddStep extends Step {
+  focalLength: number
+
+  constructor(label: string, focalLength: number) {
+    super(label)
+    this.focalLength = focalLength
+  }
+
+  execute(boxSystem: BoxSystem) {
+    boxSystem.add(this.labelHash, {
+      label: this.label,
+      focalLength: this.focalLength,
+    })
+  }
+}
+
+class RemoveStep extends Step {
+  execute(boxSystem: BoxSystem) {
+    boxSystem.remove(this.labelHash, this.label)
+  }
+}
 
 class Box {
   lenses: Lens[]
@@ -116,14 +142,7 @@ const part2 = () => {
   const boxSystem = new BoxSystem(BOX_COUNT)
 
   for (const step of steps) {
-    if (step.operation === Operation.ADD) {
-      boxSystem.add(step.labelHash, {
-        label: step.label,
-        focalLength: step.focalLength,
-      })
-    } else if (step.operation === Operation.REMOVE) {
-      boxSystem.remove(step.labelHash, step.label)
-    }
+    step.execute(boxSystem)
   }
 
   console.log(boxSystem.getProcessingPower())
@@ -138,24 +157,13 @@ const parseStep = (stepString: string): Step => {
   const matches = stepString.match(/^([a-z]+)(=|-)(\d+)?$/)!
 
   const label = matches[1]!
-  const labelHash = hash(label)
   const operation = matches[2]! as (typeof Operation)[keyof typeof Operation]
 
   if (operation === Operation.ADD) {
     const focalLength = Number(matches[3])
-
-    return {
-      label,
-      labelHash,
-      operation,
-      focalLength,
-    }
+    return new AddStep(label, focalLength)
   } else {
-    return {
-      label,
-      labelHash,
-      operation,
-    }
+    return new RemoveStep(label)
   }
 }
 
