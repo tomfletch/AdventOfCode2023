@@ -30,7 +30,17 @@ const oppositeCompasDirection = {
 } as const satisfies Record<CompasDirection, CompasDirection>
 
 const part1 = () => {
+  getLeastHeatLoss(false)
+}
+
+const part2 = () => {
+  getLeastHeatLoss(true)
+}
+
+const getLeastHeatLoss = (ultra: boolean) => {
   const map = readMap()
+
+  const goalPosition = new Vector(map.width - 1, map.height - 1)
 
   const initialState: State = {
     position: new Vector(0, 0),
@@ -38,13 +48,18 @@ const part1 = () => {
   }
 
   const queue = new PriorityQueue<State>()
-  queue.insert(0, initialState)
-  const stateCosts: Record<string, number> = {
+  const initialCost = goalPosition.manhattenDist(initialState.position)
+  queue.insert(initialCost, initialState)
+
+  const stateCostsG: Record<string, number> = {
     [JSON.stringify(initialState)]: 0,
   }
-  const prevState: Record<string, string> = {}
 
-  const goalPosition = new Vector(map.width - 1, map.height - 1)
+  const stateCostsF: Record<string, number> = {
+    [JSON.stringify(initialState)]: initialCost,
+  }
+
+  const prevState: Record<string, string> = {}
 
   let state: State
   let stateStr: string
@@ -53,36 +68,38 @@ const part1 = () => {
     state = queue.pop()!
     stateStr = JSON.stringify(state)
 
-    const stateCost = stateCosts[stateStr]!
-
     if (state.position.equals(goalPosition)) {
       break
     }
 
-    const neighbours = getNeighbours(map, state)
+    const neighbours = getNeighbours(map, state, ultra)
 
     for (const neighbour of neighbours) {
       const neighbourStateStr = JSON.stringify(neighbour.state)
 
-      if (!(neighbourStateStr in stateCosts)) {
-        const totalCost = stateCost + neighbour.cost
-        queue.insert(totalCost, neighbour.state)
-        stateCosts[neighbourStateStr] = totalCost
+      const tentativeGScore = stateCostsG[stateStr]! + neighbour.cost
+
+      if (tentativeGScore < (stateCostsG[neighbourStateStr] ?? Infinity)) {
+        const fScore =
+          tentativeGScore + goalPosition.manhattenDist(neighbour.state.position)
+
+        queue.insert(fScore, neighbour.state)
+        stateCostsF[neighbourStateStr] = fScore
+        stateCostsG[neighbourStateStr] = tentativeGScore
         prevState[neighbourStateStr] = stateStr
       }
     }
   }
 
-  console.log(stateCosts[stateStr!])
+  console.log(stateCostsG[stateStr!])
 
-  // let currentStateStr: string | undefined = stateStr!
+  let currentStateStr: string | undefined = stateStr!
 
-  // while (currentStateStr && currentStateStr in prevState) {
-  //   currentStateStr = prevState[currentStateStr]
-  // }
+  while (currentStateStr && currentStateStr in prevState) {
+    // console.log(currentStateStr)
+    currentStateStr = prevState[currentStateStr]
+  }
 }
-
-const part2 = () => {}
 
 const readMap = (): Grid<number> => {
   const lines = readInputLines(17)
@@ -91,23 +108,38 @@ const readMap = (): Grid<number> => {
   return grid
 }
 
-const getNeighbours = (map: Grid<number>, state: State): Neighbour[] => {
-  const avoidDirections = allThreeEqual(state.lastDirections)
-    ? [state.lastDirections[0]!]
+const getNeighbours = (
+  map: Grid<number>,
+  state: State,
+  ultra: boolean,
+): Neighbour[] => {
+  const lastDirection = state.lastDirections[state.lastDirections.length - 1]
+
+  const avoidDirections = lastEqual(ultra ? 10 : 3, state.lastDirections)
+    ? [lastDirection!]
     : []
 
   if (state.lastDirections.length !== 0) {
-    const lastDirection = state.lastDirections[state.lastDirections.length - 1]!
-    const oppositeDirection = oppositeCompasDirection[lastDirection]
+    const oppositeDirection = oppositeCompasDirection[lastDirection!]
     avoidDirections.push(oppositeDirection)
   }
 
+  const mustDirection = !ultra
+    ? null
+    : !lastEqual(4, state.lastDirections)
+      ? lastDirection
+      : null
+
   const neighbours: Neighbour[] = []
 
-  const nextLastDirections = state.lastDirections.slice(-2)
+  const nextLastDirections = state.lastDirections.slice(ultra ? -9 : -2)
 
   for (const [compasDirectionStr, delta] of Object.entries(Directions)) {
     const compasDirection = compasDirectionStr as CompasDirection
+
+    if (mustDirection && mustDirection !== compasDirection) {
+      continue
+    }
 
     if (avoidDirections.includes(compasDirection)) {
       continue
@@ -132,11 +164,20 @@ const getNeighbours = (map: Grid<number>, state: State): Neighbour[] => {
   return neighbours
 }
 
-const allThreeEqual = <T>(arr: T[]) => {
-  if (arr.length !== 3) {
+const lastEqual = <T>(len: number, arr: T[]) => {
+  if (arr.length < len) {
     return false
   }
-  return arr.every((e) => e === arr[0])
+
+  const lastElement = arr[arr.length - 1]!
+
+  for (let i = arr.length - len; i < arr.length; i++) {
+    if (arr[i] !== lastElement) {
+      return false
+    }
+  }
+
+  return true
 }
 
 export default [part1, part2]
